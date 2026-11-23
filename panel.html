@@ -1,0 +1,944 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#0b0b0f">
+  <meta name="description" content="Terminal privada de registro de sobrevivientes.">
+  <title>Registro de sobrevivientes</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    :root {
+      color-scheme: light;
+      --ink: #292a27;
+      --muted: #72736d;
+      --accent: #a45b3e;
+      --accent-dark: #84452e;
+      --paper: #fff;
+      --background: #f6f3ee;
+      --line: #e8e4dc;
+      --danger: #a43e36;
+      --success: #326b50;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      min-width: 320px;
+      min-height: 100vh;
+      margin: 0;
+      padding: 32px 18px;
+      color: var(--ink);
+      background: var(--background);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+    }
+
+    button,
+    input {
+      font: inherit;
+    }
+
+    .container {
+      width: min(100%, 980px);
+      margin: 0 auto;
+    }
+
+    .login-card {
+      width: min(100%, 430px);
+      margin: clamp(32px, 12vh, 110px) auto 0;
+      padding: clamp(25px, 7vw, 42px);
+      border: 1px solid var(--line);
+      border-radius: 20px;
+      background: var(--paper);
+      box-shadow: 0 16px 46px rgba(48, 41, 32, .07);
+    }
+
+    .eyebrow {
+      margin: 0 0 9px;
+      color: var(--accent);
+      font-size: .75rem;
+      font-weight: 700;
+      letter-spacing: .14em;
+      text-transform: uppercase;
+    }
+
+    h1,
+    h2,
+    p {
+      margin-top: 0;
+    }
+
+    h1,
+    h2 {
+      letter-spacing: -.035em;
+    }
+
+    h1 {
+      margin-bottom: 8px;
+      font-size: clamp(1.75rem, 5vw, 2.2rem);
+    }
+
+    .login-description {
+      margin-bottom: 25px;
+      color: var(--muted);
+      font-size: .95rem;
+      line-height: 1.55;
+    }
+
+    .field {
+      margin-bottom: 17px;
+    }
+
+    label {
+      display: block;
+      margin-bottom: 7px;
+      color: #484943;
+      font-size: .87rem;
+      font-weight: 600;
+    }
+
+    input {
+      width: 100%;
+      min-height: 48px;
+      padding: 0 13px;
+      border: 1px solid #dcd9d1;
+      border-radius: 9px;
+      outline: none;
+      color: var(--ink);
+      background: var(--paper);
+      transition: border-color .2s, box-shadow .2s;
+    }
+
+    input:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(164, 91, 62, .13);
+    }
+
+    button {
+      min-height: 45px;
+      padding: 10px 16px;
+      border: 0;
+      border-radius: 9px;
+      color: #fff;
+      background: var(--accent);
+      cursor: pointer;
+      font-weight: 650;
+      transition: background .2s, opacity .2s;
+    }
+
+    button:hover:not(:disabled) {
+      background: var(--accent-dark);
+    }
+
+    button:focus-visible {
+      outline: 3px solid rgba(164, 91, 62, .3);
+      outline-offset: 3px;
+    }
+
+    button:disabled {
+      cursor: wait;
+      opacity: .65;
+    }
+
+    .login-button {
+      width: 100%;
+      margin-top: 3px;
+    }
+
+    .message {
+      min-height: 1.4em;
+      margin: 14px 0 0;
+      color: var(--muted);
+      font-size: .88rem;
+      line-height: 1.45;
+    }
+
+    .message.error {
+      color: var(--danger);
+    }
+
+    .message.success {
+      color: var(--success);
+    }
+
+    [hidden] {
+      display: none !important;
+    }
+
+    .dashboard-header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 18px;
+      margin: 10px 0 24px;
+    }
+
+    .dashboard-header h1 {
+      margin-bottom: 5px;
+    }
+
+    .dashboard-header p {
+      margin-bottom: 0;
+      color: var(--muted);
+      font-size: .93rem;
+    }
+
+    .secondary-button {
+      flex: 0 0 auto;
+      border: 1px solid #d9d4ca;
+      color: #514d46;
+      background: transparent;
+    }
+
+    .secondary-button:hover:not(:disabled) {
+      border-color: #bdb5a8;
+      color: var(--ink);
+      background: #eeebe5;
+    }
+
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 16px;
+      margin-bottom: 22px;
+    }
+
+    .stat-card {
+      padding: 20px 22px;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      background: var(--paper);
+    }
+
+    .stat-value {
+      display: block;
+      margin-bottom: 5px;
+      color: var(--accent-dark);
+      font-size: clamp(1.8rem, 6vw, 2.4rem);
+      font-variant-numeric: tabular-nums;
+      font-weight: 700;
+      letter-spacing: -.04em;
+    }
+
+    .stat-label {
+      color: var(--muted);
+      font-size: .85rem;
+    }
+
+    .list-card {
+      overflow: hidden;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      background: var(--paper);
+    }
+
+    .list-toolbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 14px;
+      padding: 18px 20px;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .list-toolbar h2 {
+      margin: 0;
+      font-size: 1.05rem;
+    }
+
+    .list-actions {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .search-input {
+      width: min(35vw, 250px);
+      min-height: 42px;
+    }
+
+    .export-button {
+      min-height: 42px;
+      white-space: nowrap;
+    }
+
+    .table-wrap {
+      overflow-x: auto;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      text-align: left;
+    }
+
+    th,
+    td {
+      padding: 14px 20px;
+      border-bottom: 1px solid #efede8;
+      vertical-align: middle;
+    }
+
+    th {
+      color: var(--muted);
+      background: #fbfaf8;
+      font-size: .75rem;
+      font-weight: 700;
+      letter-spacing: .045em;
+      text-transform: uppercase;
+      white-space: nowrap;
+    }
+
+    td {
+      font-size: .9rem;
+    }
+
+    tbody tr:last-child td {
+      border-bottom: 0;
+    }
+
+    .number-cell {
+      width: 145px;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .date-cell {
+      width: 240px;
+      color: #55564f;
+      white-space: nowrap;
+    }
+
+    .table-message {
+      padding: 28px 20px;
+      color: var(--muted);
+      font-size: .92rem;
+      text-align: center;
+    }
+
+    @media (max-width: 650px) {
+      body {
+        padding: 20px 12px;
+      }
+
+      .dashboard-header {
+        align-items: center;
+      }
+
+      .dashboard-header h1 {
+        font-size: 1.65rem;
+      }
+
+      .dashboard-header p {
+        font-size: .84rem;
+      }
+
+      .stats {
+        gap: 10px;
+      }
+
+      .stat-card {
+        padding: 16px;
+      }
+
+      .list-toolbar {
+        align-items: stretch;
+        flex-direction: column;
+        padding: 16px;
+      }
+
+      .list-actions {
+        width: 100%;
+      }
+
+      .search-input {
+        width: 100%;
+        min-width: 0;
+      }
+
+      .export-button {
+        flex: 0 0 auto;
+      }
+
+      th,
+      td {
+        padding: 12px 14px;
+      }
+    }
+
+    @media (max-width: 390px) {
+      .dashboard-header {
+        align-items: flex-start;
+      }
+
+      .secondary-button {
+        padding: 9px 11px;
+        font-size: .85rem;
+      }
+
+      .list-actions {
+        align-items: stretch;
+        flex-direction: column;
+      }
+    }
+
+    :root {
+      color-scheme: dark;
+      --ink: #d7d8c8;
+      --muted: #9ca398;
+      --accent: #c4b26e;
+      --accent-dark: #9a884b;
+      --paper: #15151b;
+      --background: #09090d;
+      --line: #47484a;
+      --danger: #dc8178;
+      --success: #c9d6a0;
+    }
+
+    body {
+      position: relative;
+      isolation: isolate;
+      color: var(--ink);
+      background:
+        radial-gradient(ellipse at 12% 9%, rgba(86, 23, 36, .3), transparent 34%),
+        radial-gradient(ellipse at 88% 73%, rgba(47, 33, 72, .29), transparent 41%),
+        repeating-linear-gradient(3deg, rgba(255,255,255,.012) 0 1px, transparent 1px 5px),
+        linear-gradient(145deg, #08080b, #151219 55%, #09090d);
+    }
+
+    body::before {
+      position: fixed;
+      z-index: -1;
+      inset: 0;
+      background:
+        repeating-linear-gradient(0deg, transparent 0 3px, rgba(203, 214, 174, .045) 3px 4px),
+        repeating-linear-gradient(91deg, transparent 0 8px, rgba(0, 0, 0, .11) 8px 9px);
+      content: "";
+      opacity: .24;
+      pointer-events: none;
+    }
+
+    .login-card,
+    .stat-card,
+    .list-card {
+      border: 1px solid #62615a;
+      border-radius: 7px;
+      background:
+        repeating-linear-gradient(115deg, transparent 0 39px, rgba(215, 207, 165, .018) 40px, transparent 42px),
+        linear-gradient(145deg, rgba(25, 24, 30, .98), rgba(15, 15, 20, .99));
+      box-shadow:
+        0 20px 55px rgba(0, 0, 0, .52),
+        inset 0 0 0 3px rgba(255, 255, 255, .018),
+        inset 0 0 28px rgba(0, 0, 0, .28);
+    }
+
+    .login-card {
+      border-color: #655b50;
+    }
+
+    .eyebrow {
+      color: var(--accent);
+      letter-spacing: .19em;
+      text-shadow: 0 0 12px rgba(205, 184, 107, .16);
+    }
+
+    h1,
+    h2 {
+      color: #e2dfca;
+      letter-spacing: .025em;
+    }
+
+    .dashboard-header {
+      animation: headerSignal 8s ease-in-out infinite;
+    }
+
+    .dashboard-header h1 {
+      text-shadow: 0 0 17px rgba(177, 191, 131, .17), 2px 2px 0 rgba(79, 24, 37, .75);
+    }
+
+    .login-description,
+    .dashboard-header p {
+      color: var(--muted);
+    }
+
+    label {
+      color: #c8caba;
+    }
+
+    input {
+      border: 1px solid #4f5050;
+      border-radius: 5px;
+      color: #e1e2d4;
+      background: #0c0d11;
+      box-shadow: inset 0 2px 7px rgba(0, 0, 0, .45);
+    }
+
+    input::placeholder {
+      color: #85877f;
+    }
+
+    input:focus {
+      border-color: #b7a765;
+      box-shadow: 0 0 0 3px rgba(196, 178, 110, .13), inset 0 2px 7px rgba(0, 0, 0, .4);
+    }
+
+    button {
+      border: 1px solid #9a4c4a;
+      border-radius: 5px;
+      color: #eee8d4;
+      background: linear-gradient(180deg, #782833, #4e1927);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, .32), inset 0 1px 0 rgba(255, 255, 255, .09);
+      letter-spacing: .045em;
+      text-transform: uppercase;
+    }
+
+    button:hover:not(:disabled) {
+      background: linear-gradient(180deg, #8b343e, #60202d);
+    }
+
+    button:focus-visible {
+      outline-color: rgba(215, 199, 128, .7);
+    }
+
+    .message {
+      color: var(--muted);
+    }
+
+    .message.error {
+      color: var(--danger);
+    }
+
+    .message.success {
+      color: var(--success);
+    }
+
+    .secondary-button {
+      border-color: #59564a;
+      color: #d2c68d;
+      background: #17151b;
+    }
+
+    .secondary-button:hover:not(:disabled) {
+      border-color: #9f8c56;
+      color: #f0df9e;
+      background: #211b22;
+    }
+
+    .stat-card {
+      border-color: #4d4b44;
+    }
+
+    .stat-value {
+      color: #d7c778;
+      text-shadow: 0 0 17px rgba(211, 190, 111, .16);
+    }
+
+    .stat-label {
+      color: #b6bd9f;
+      font-size: .79rem;
+      letter-spacing: .11em;
+      text-transform: uppercase;
+    }
+
+    .list-card {
+      overflow: hidden;
+      border-color: #55534a;
+    }
+
+    .list-toolbar {
+      border-bottom-color: #47463f;
+      background: rgba(12, 12, 16, .6);
+    }
+
+    .list-toolbar h2 {
+      font-size: 1rem;
+      letter-spacing: .12em;
+      text-transform: uppercase;
+    }
+
+    th,
+    td {
+      border-bottom-color: rgba(126, 128, 112, .2);
+    }
+
+    th {
+      color: #c9bb7c;
+      background: rgba(10, 11, 14, .8);
+      letter-spacing: .1em;
+    }
+
+    td {
+      color: #d0d2c4;
+    }
+
+    tbody tr:hover {
+      background: rgba(191, 174, 108, .045);
+    }
+
+    .date-cell {
+      color: #aeb5a6;
+    }
+
+    .table-message {
+      color: var(--muted);
+    }
+
+    @keyframes headerSignal {
+      0%, 100% { opacity: 1; }
+      43% { opacity: .97; }
+      46% { opacity: .92; }
+      49% { opacity: .98; }
+      74% { opacity: .95; }
+      78% { opacity: 1; }
+    }
+
+    @media (max-width: 650px) {
+      body {
+        padding: 20px 12px;
+      }
+
+      .dashboard-header {
+        align-items: stretch;
+        flex-direction: column;
+      }
+
+      .dashboard-header h1 {
+        font-size: clamp(1.25rem, 5vw, 1.65rem);
+      }
+
+      .secondary-button {
+        align-self: flex-start;
+      }
+
+      .list-actions {
+        align-items: stretch;
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *,
+      *::before,
+      *::after {
+        animation-duration: .01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: .01ms !important;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="container">
+    <section class="login-card" id="login-section" aria-labelledby="login-title">
+      <p class="eyebrow">Terminal de seguridad • acceso privado</p>
+      <h1 id="login-title">Acceso al registro</h1>
+      <p class="login-description">Inicia sesión para consultar el registro de sobrevivientes.</p>
+      <form id="login-form">
+        <div class="field">
+          <label for="email">Correo electrónico</label>
+          <input id="email" name="email" type="email" autocomplete="username" required>
+        </div>
+        <div class="field">
+          <label for="password">Contraseña</label>
+          <input id="password" name="password" type="password" autocomplete="current-password" required>
+        </div>
+        <button class="login-button" id="login-button" type="submit">Iniciar sesión</button>
+        <p class="message" id="login-message" role="status" aria-live="polite"></p>
+      </form>
+    </section>
+
+    <section id="dashboard" hidden aria-labelledby="dashboard-title">
+      <header class="dashboard-header">
+        <div>
+          <p class="eyebrow">Monitor de seguridad • turno nocturno</p>
+          <h1 id="dashboard-title">REGISTRO DE SOBREVIVIENTES</h1>
+          <p>Terminal privada de confirmaciones.</p>
+        </div>
+        <button class="secondary-button" id="signout-button" type="button">Cerrar sesión</button>
+      </header>
+
+      <section class="stats" aria-label="Resumen de confirmaciones">
+        <article class="stat-card">
+          <span class="stat-value" id="people-count">—</span>
+          <span class="stat-label">PERSONAS CONFIRMADAS</span>
+        </article>
+        <article class="stat-card">
+          <span class="stat-value" id="rsvp-count">—</span>
+          <span class="stat-label">Confirmaciones</span>
+        </article>
+      </section>
+
+      <section class="list-card" aria-labelledby="list-title">
+        <div class="list-toolbar">
+          <h2 id="list-title">Registro</h2>
+          <div class="list-actions">
+            <label for="search" hidden>Buscar invitados por nombre</label>
+            <input class="search-input" id="search" type="search" placeholder="Buscar por nombre" autocomplete="off">
+            <button class="export-button" id="export-button" type="button">Exportar CSV</button>
+          </div>
+        </div>
+        <div id="list-message" class="table-message" role="status" aria-live="polite">Cargando confirmaciones…</div>
+        <div class="table-wrap" id="table-wrap" hidden>
+          <table>
+            <thead>
+              <tr>
+                <th scope="col">Nombre</th>
+                <th scope="col">Acompañantes</th>
+                <th scope="col">Fecha de confirmación</th>
+              </tr>
+            </thead>
+            <tbody id="guest-rows"></tbody>
+          </table>
+        </div>
+      </section>
+      <p class="message" id="dashboard-message" role="status" aria-live="polite"></p>
+    </section>
+  </main>
+
+  <script>
+    const SUPABASE_URL = "REEMPLAZA_CON_TU_SUPABASE_URL";
+    const SUPABASE_ANON_KEY = "REEMPLAZA_CON_TU_ANON_KEY";
+
+    const loginSection = document.getElementById("login-section");
+    const loginForm = document.getElementById("login-form");
+    const loginButton = document.getElementById("login-button");
+    const loginMessage = document.getElementById("login-message");
+    const dashboard = document.getElementById("dashboard");
+    const signoutButton = document.getElementById("signout-button");
+    const searchInput = document.getElementById("search");
+    const exportButton = document.getElementById("export-button");
+    const tableWrap = document.getElementById("table-wrap");
+    const tableMessage = document.getElementById("list-message");
+    const guestRows = document.getElementById("guest-rows");
+    const peopleCount = document.getElementById("people-count");
+    const rsvpCount = document.getElementById("rsvp-count");
+    const dashboardMessage = document.getElementById("dashboard-message");
+
+    let supabaseClient;
+    let allGuests = [];
+    let visibleGuests = [];
+
+    function setMessage(element, message, type) {
+      element.textContent = message;
+      element.className = "message" + (type ? " " + type : "");
+    }
+
+    function setTableMessage(message) {
+      tableMessage.textContent = message;
+      tableMessage.hidden = false;
+      tableWrap.hidden = true;
+    }
+
+    function formatDate(value) {
+      const date = new Date(value);
+      if (Number.isNaN(date.getTime())) return "Fecha no disponible";
+      return new Intl.DateTimeFormat("es", {
+        dateStyle: "medium",
+        timeStyle: "short"
+      }).format(date);
+    }
+
+    function makeCell(text, className) {
+      const cell = document.createElement("td");
+      if (className) cell.className = className;
+      cell.textContent = text;
+      return cell;
+    }
+
+    function renderGuests() {
+      const query = searchInput.value.trim().toLocaleLowerCase("es");
+      visibleGuests = allGuests.filter((guest) =>
+        String(guest.nombre || "").toLocaleLowerCase("es").includes(query)
+      );
+
+      guestRows.replaceChildren();
+      if (visibleGuests.length === 0) {
+        setTableMessage(query ? "No se encontraron invitados con ese nombre." : "Aún no hay confirmaciones.");
+        return;
+      }
+
+      const rows = document.createDocumentFragment();
+      for (const guest of visibleGuests) {
+        const row = document.createElement("tr");
+        row.append(
+          makeCell(guest.nombre),
+          makeCell(String(guest.acompanantes), "number-cell"),
+          makeCell(formatDate(guest.created_at), "date-cell")
+        );
+        rows.append(row);
+      }
+      guestRows.append(rows);
+      tableMessage.hidden = true;
+      tableWrap.hidden = false;
+    }
+
+    async function fetchAllGuests() {
+      const pageSize = 500;
+      const guests = [];
+
+      for (let offset = 0; ; offset += pageSize) {
+        const { data, error } = await supabaseClient
+          .from("invitados")
+          .select("nombre, acompanantes, created_at")
+          .order("created_at", { ascending: false })
+          .range(offset, offset + pageSize - 1);
+
+        if (error) {
+          throw new Error("No se pudieron cargar los invitados. Verifica los permisos RLS de la cuenta.");
+        }
+
+        guests.push(...data);
+        if (data.length < pageSize) break;
+      }
+      return guests;
+    }
+
+    async function loadGuests() {
+      setTableMessage("Cargando confirmaciones…");
+      setMessage(dashboardMessage, "", "");
+
+      try {
+        allGuests = await fetchAllGuests();
+        const totalPeople = allGuests.reduce(
+          (total, guest) => total + 1 + Number(guest.acompanantes || 0),
+          0
+        );
+        peopleCount.textContent = new Intl.NumberFormat("es").format(totalPeople);
+        rsvpCount.textContent = new Intl.NumberFormat("es").format(allGuests.length);
+        renderGuests();
+      } catch (error) {
+        allGuests = [];
+        visibleGuests = [];
+        peopleCount.textContent = "—";
+        rsvpCount.textContent = "—";
+        setTableMessage(error.message);
+        setMessage(dashboardMessage, error.message, "error");
+        console.error("Error al consultar invitados:", error);
+      }
+    }
+
+    function showDashboard() {
+      loginSection.hidden = true;
+      dashboard.hidden = false;
+      loadGuests();
+    }
+
+    loginForm.addEventListener("submit", async (event) => {
+      event.preventDefault();
+      setMessage(loginMessage, "", "");
+      loginButton.disabled = true;
+      loginButton.textContent = "Iniciando sesión…";
+
+      const email = document.getElementById("email").value.trim();
+      const password = document.getElementById("password").value;
+      const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
+
+      loginButton.disabled = false;
+      loginButton.textContent = "Iniciar sesión";
+
+      if (error) {
+        const invalidCredentials = /invalid login credentials/i.test(error.message);
+        const message = invalidCredentials
+          ? "El correo o la contraseña son incorrectos."
+          : "No se pudo iniciar sesión. Verifica tus datos e inténtalo de nuevo.";
+        setMessage(loginMessage, message, "error");
+        console.error("Error de inicio de sesión:", error.message);
+        return;
+      }
+
+      if (!data.session) {
+        setMessage(loginMessage, "No se pudo establecer la sesión. Inténtalo de nuevo.", "error");
+        return;
+      }
+
+      loginForm.reset();
+      showDashboard();
+    });
+
+    searchInput.addEventListener("input", renderGuests);
+
+    exportButton.addEventListener("click", () => {
+      if (visibleGuests.length === 0) {
+        setMessage(dashboardMessage, "No hay invitados para exportar.", "error");
+        return;
+      }
+
+      const escapeCsv = (value) => {
+        let text = String(value ?? "");
+        if (/^[\s]*[=+\-@]/.test(text)) text = "'" + text;
+        return '"' + text.replace(/"/g, '""') + '"';
+      };
+      const lines = [
+        ["Nombre", "Acompañantes", "Fecha de confirmación"].map(escapeCsv).join(","),
+        ...visibleGuests.map((guest) => [
+          escapeCsv(guest.nombre),
+          escapeCsv(guest.acompanantes),
+          escapeCsv(guest.created_at)
+        ].join(","))
+      ];
+      const blob = new Blob(["\uFEFF" + lines.join("\r\n")], {
+        type: "text/csv;charset=utf-8"
+      });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = "invitados.csv";
+      document.body.append(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(url);
+      setMessage(dashboardMessage, "La lista se exportó correctamente.", "success");
+    });
+
+    signoutButton.addEventListener("click", async () => {
+      signoutButton.disabled = true;
+      const { error } = await supabaseClient.auth.signOut();
+      signoutButton.disabled = false;
+
+      if (error) {
+        setMessage(dashboardMessage, "No se pudo cerrar la sesión. Inténtalo de nuevo.", "error");
+        console.error("Error al cerrar sesión:", error.message);
+        return;
+      }
+
+      allGuests = [];
+      visibleGuests = [];
+      guestRows.replaceChildren();
+      dashboard.hidden = true;
+      loginSection.hidden = false;
+      setMessage(loginMessage, "Sesión cerrada.", "success");
+    });
+
+    const credentialsConfigured =
+      SUPABASE_URL !== "REEMPLAZA_CON_TU_SUPABASE_URL" &&
+      SUPABASE_ANON_KEY !== "REEMPLAZA_CON_TU_ANON_KEY";
+
+    if (!credentialsConfigured || !window.supabase) {
+      loginButton.disabled = true;
+      setMessage(loginMessage, "Configura la URL y la clave anon de Supabase para habilitar el acceso.", "error");
+    } else {
+      supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+      supabaseClient.auth.onAuthStateChange((event) => {
+        if (event === "SIGNED_OUT" && !dashboard.hidden) {
+          allGuests = [];
+          visibleGuests = [];
+          guestRows.replaceChildren();
+          dashboard.hidden = true;
+          loginSection.hidden = false;
+        }
+      });
+
+      (async () => {
+        const { data, error } = await supabaseClient.auth.getSession();
+        if (error) {
+          setMessage(loginMessage, "No se pudo verificar la sesión. Intenta iniciar sesión de nuevo.", "error");
+          console.error("Error al verificar la sesión:", error.message);
+          return;
+        }
+        if (data.session) showDashboard();
+      })();
+    }
+  </script>
+</body>
+</html>∎
