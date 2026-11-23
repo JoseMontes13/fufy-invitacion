@@ -8,7 +8,7 @@
   <meta property="og:type" content="website">
   <meta property="og:title" content="¡ESTÁS INVITADO!">
   <meta property="og:description" content="Sobrevive a la fiesta… y confirma tu asistencia.">
-  <title>¡ESTÁS INVITADO! — Fiesta de medianoche</title>
+  <title>9 Birthday Party James G Montes!</title>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
     :root {
@@ -763,15 +763,47 @@
       content: "";
     }
 
-    h1 {
+    .invitation > h1 {
       margin: 0;
-      color: #f5eedf;
+      color: #f4eedf;
       font-family: Georgia, "Times New Roman", serif;
-      font-size: clamp(2.45rem, 10.4vw, 3.55rem);
+      font-size: clamp(2rem, 8.6vw, 3rem);
       font-weight: 700;
-      letter-spacing: .065em;
-      line-height: 1.12;
-      text-shadow: 0 2px 0 rgba(79, 31, 39, .9), 0 0 24px rgba(137, 34, 48, .2);
+      letter-spacing: .015em;
+      line-height: 1.16;
+      text-shadow: 0 2px 0 rgba(100, 30, 40, .9), 0 0 20px rgba(224, 190, 103, .14);
+      text-wrap: balance;
+      animation:
+        invitationTitleReveal .95s cubic-bezier(.2, .8, .2, 1) both,
+        titleFlicker 9s ease-in-out 1s infinite;
+    }
+
+    @keyframes invitationTitleReveal {
+      from {
+        opacity: 0;
+        filter: blur(3px);
+        transform: translateY(10px);
+      }
+
+      to {
+        opacity: 1;
+        filter: blur(0);
+        transform: translateY(0);
+      }
+    }
+
+    @keyframes titleFlicker {
+      0%, 48%, 54%, 100% {
+        text-shadow: 0 2px 0 rgba(100, 30, 40, .9), 0 0 18px rgba(224, 190, 103, .14);
+      }
+
+      51% {
+        text-shadow: 0 2px 0 rgba(100, 30, 40, .9), 0 0 13px rgba(224, 190, 103, .1);
+      }
+
+      86% {
+        text-shadow: 0 2px 0 rgba(100, 30, 40, .9), 0 0 22px rgba(224, 190, 103, .2);
+      }
     }
 
     .intro {
@@ -949,8 +981,9 @@
         height: 99px;
       }
 
-      h1 {
-        font-size: clamp(2.2rem, 10vw, 2.8rem);
+      .invitation > h1 {
+        font-size: clamp(1.95rem, 8.4vw, 2.55rem);
+        line-height: 1.2;
       }
 
       .counter {
@@ -1501,7 +1534,7 @@
       </svg>
     </div>
     <p class="eyebrow">Pizzería • después de medianoche</p>
-    <h1>¡ESTÁS<br>INVITADO!</h1>
+    <h1>9 Birthday Party James G Montes!</h1>
     <p class="intro">Sobrevive a la fiesta… y confirma tu asistencia</p>
 
     <section class="event-info" aria-labelledby="event-info-title">
