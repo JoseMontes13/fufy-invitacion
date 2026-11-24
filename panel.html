@@ -696,8 +696,8 @@
   </main>
 
   <script>
-    const SUPABASE_URL = "REEMPLAZA_CON_TU_SUPABASE_URL";
-    const SUPABASE_ANON_KEY = "REEMPLAZA_CON_TU_ANON_KEY";
+    const SUPABASE_URL = "https://cboxcilvqqwaogtxokbo.supabase.co";
+    const SUPABASE_ANON_KEY = "sb_publishable_gdgfleJCWGeUec7HjiabRA_HkKdExlT";
 
     const loginSection = document.getElementById("login-section");
     const loginForm = document.getElementById("login-form");
@@ -910,8 +910,11 @@
     });
 
     const credentialsConfigured =
-      SUPABASE_URL !== "REEMPLAZA_CON_TU_SUPABASE_URL" &&
-      SUPABASE_ANON_KEY !== "REEMPLAZA_CON_TU_ANON_KEY";
+      /^https:\/\/[a-z0-9-]+\.supabase\.co$/i.test(SUPABASE_URL) &&
+      SUPABASE_URL === SUPABASE_URL.trim() &&
+      SUPABASE_ANON_KEY.length > 0 &&
+      SUPABASE_ANON_KEY === SUPABASE_ANON_KEY.trim() &&
+      !/^(PEGA_AQUI_|REEMPLAZA_CON_TU_)/i.test(SUPABASE_ANON_KEY);
 
     if (!credentialsConfigured || !window.supabase) {
       loginButton.disabled = true;

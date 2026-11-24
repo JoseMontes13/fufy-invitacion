@@ -43,7 +43,7 @@ on public.invitados
 for select
 to authenticated
 using (
-  auth.uid() = 'REEMPLAZAR_EL_UID_DEL_DUEÑO'::uuid
+  auth.uid() = '50e59e5e-f928-44c9-8b74-c856b165cca2'::uuid
 );
 
 -- No se crean políticas para UPDATE ni DELETE.
